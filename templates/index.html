@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+ 
+<head>
+    <title>LineIT: Lineups Integration Tool</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <link type="text/css" href="http://herkules.ms.mff.cuni.cz/lineit_v2/jqueryui/css/ui-lightness/jquery-ui-1.8.18.custom.css" rel="stylesheet" />
+    <!--[if IE]><script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+    <link rel="stylesheet" type="text/css" href="http://herkules.ms.mff.cuni.cz/lineit_v2/css/1494833695.css" />
+        
+    <script type="text/javascript" src="http://herkules.ms.mff.cuni.cz/lineit_v2/jqueryui/js/jquery-1.7.1.min.js"></script>
+    <script type="text/javascript" src="http://herkules.ms.mff.cuni.cz/lineit_v2/jqueryui/js/jquery-ui-1.8.18.custom.min.js"></script>
+    <!--<script type="text/javascript" src="http://herkules.ms.mff.cuni.cz/popImg.js"></script> -->
+    <!--
+     var cartMembers =  {{cart}} ;
+     -->
+    <script type="text/javascript">
+    var currFeatures =  {{fmembers}}  ;
+    var cartMembers =  {{cart}} ;
+    var listOfFeatures = {{listOfFeatures}}  ;
+    var relevantQueryResults = {{qRel}}  ;
+    function unique(arr) {
+        var hash = {}, result = [];
+        for ( var i = 0, l = arr.length; i < l; ++i ) {
+            if ( !hash.hasOwnProperty(arr[i]) ) { //it works with objects! in FF, at least
+                hash[ arr[i] ] = true;
+                result.push(arr[i]);
+            }
+        }
+        return result;
+    }
+
+
+    function showSuspect(){
+        item = $("#lSuspect").val()
+        if(item!=""){
+            $("#currSuspect").html("<img src='http://herkules.ms.mff.cuni.cz/lineit_v2/static/foto/"+item+".jpg' width='150' height='192'/><br/><input type='button' value='Query' class='AddSuspectToQueryButton' id='addSuspectToQuery_"+item+"' title='Add person into the search query'/>")
+            $("#addSuspectToQuery_"+item).on('mousedown', function(){
+                    item = this.id;
+                    oid = item.replace("addID_", "");
+                    oid = oid.replace("addSuspectToQuery_", "");
+                    addObjectToQuery(oid);
+                    var canvas = $("#canvas_"+oid);
+                    var context = canvas[0].getContext('2d');
+                    drawIt( canvas, context, oid);
+            });
+        
+        }
+        
+        loadRecommendation(0.0, 0.0);
+        
+    }
+
+    
+
+      function removeObjectFromFeatures(obj){
+          $(obj).parent().remove();
+          var objID = obj.id.replace("rem","item");
+          $("#"+objID).css("background-color","white");
+          
+          var objID2 = obj.id.replace("rem","itemSelected");
+          $("#"+objID2).css("background-color","white"); 
+          
+          loadRecommendation(0.0, 0.0);         
+                
+      }      
+
+
+      function addObjectToFeature(item, index) {
+          item = item.replace(" ", "");
+
+            var html = "<div class='selectedFeatureMembers' ><input type='hidden' name='featureMembers' value='"+item+"' /><img class='lineupMember' src='http://herkules.ms.mff.cuni.cz/lineit_v2/static/foto/"+item+".jpg' width=75 height=96 /><br/><input type='button' value='Query' class='AddSelectedToQueryButton' id='addSelectedToQuery_"+item+"' title='Add object into the search query'/><br/><input type='button' value='remove' class='removeObjButton' id='rem_"+item+"' /> </div>";
+              
+            $("#currFM").append(html);
+            $("#currFM .removeObjButton").last().on("click", function(){
+                removeObjectFromFeatures(this) ;
+            });
+            
+            $("#currFM .lineupMember").last().on("click", function(){
+                toggleDetails(this, "160px","75px","164px");
+            });
+            
+            var objID = "item_"+item;
+            $("#"+objID).css("background-color","orange");        
+            objID = "itemSelected_"+item;
+            $("#"+objID).css("background-color","orange"); 
+            objID = "itemInOutfit_"+item;
+            $("#"+objID).css("background-color","orange");
+
+            $("#addSelectedToQuery_"+item).on('mousedown', function(){
+                    item = this.id;
+                    oid = item.replace("addID_", "");
+                    oid = oid.replace("addSelectedToQuery_", "");
+                    addObjectToQuery(oid);
+                    var canvas = $("#canvas_"+oid);
+                    var context = canvas[0].getContext('2d');
+                    drawIt( canvas, context, oid);
+            });
+
+            $("#VAQueryAddID_"+item).on("mousedown", function(){
+                    item = this.id;
+                    oid = item.replace("VAQueryAddID_", "");
+                    addObjectToQuery(oid);
+                    var canvas = $("#canvas_"+oid);
+                    var context = canvas[0].getContext('2d');
+                    drawIt( canvas, context, oid);
+            });
+            
+      }            
+      
+
+    function loadRecommendation(cbVal, visVal) {
+          var xhttp = new XMLHttpRequest();
+          var urlEncodedData = "";
+          var urlEncodedDataPairs = [];    
+            
+          var featureMembers = [];                  
+          var fmList = document.getElementsByName("featureMembers");          
+          for (i=0; i < fmList.length; i++){
+              featureMembers.push($(fmList[i]).val());
+          }
+          
+          featureMembers = featureMembers.join(",");        
+          var lineupSuspect = $("#lSuspect").val();
+                          
+          urlEncodedDataPairs.push(encodeURIComponent("ajaxRequest") + '=' + encodeURIComponent("addToLineupAndRecommend"));
+          urlEncodedDataPairs.push(encodeURIComponent("featureMembers") + '=' + encodeURIComponent(featureMembers));
+          urlEncodedDataPairs.push(encodeURIComponent("lineupSuspect") + '=' + encodeURIComponent(lineupSuspect));
+          urlEncodedDataPairs.push(encodeURIComponent("addedCBVal") + '=' + encodeURIComponent(cbVal));
+          urlEncodedDataPairs.push(encodeURIComponent("addedVISVal") + '=' + encodeURIComponent(visVal));
+          urlEncodedData = urlEncodedDataPairs.join('&');
+          
+          xhttp.onreadystatechange = function() {
+              if (this.readyState == 4 && this.status == 200) {                  
+                  $("#recommended").html(this.responseText);
+                  addListenersOnRecommended();
+              }
+          };
+          xhttp.open("GET", "?"+urlEncodedData, true);
+          xhttp.send();
+      }
+      
+      function addListenersOnRecommended(){
+          $(".RecAddToLineupButton").click(function() {          
+              item = this.id;
+              item = item.replace("addToLineupID_", "");
+              /*TODO: store weights of the VIS and CB*/
+              
+              var cbSim = $("#recCBSim_"+item).val();
+              var visSim = $("#recVISSim_"+item).val();
+              
+              addObjectToFeature(item, 0);
+              
+              cbSim = Number(cbSim);
+              if(isNaN(cbSim)||cbSim>10){
+                   cbSim = 0;
+              }
+              visSim = Number(visSim);
+              if(isNaN(visSim)||cbSim>10){
+                   visSim = 0;
+              }
+              loadRecommendation(cbSim, visSim);  
+          });
+          
+          $("img.objOutfit").on("click", function(){
+             toggleDetails(this, "160px","94px","164px");
+          }); 
+          
+          RecsQueryButtons = $(".RecAddToQueryButton");
+          RecsQueryButtons.on('mousedown', function(){
+                    item = this.id;
+                    oid = item.replace("addRecID_", "");
+                    addObjectToQuery(oid);
+                    var canvas = $("#canvas_"+oid);
+                    var context = canvas[0].getContext('2d');
+                    drawIt( canvas, context, oid);
+          });      
+      }
+   
+      function checkSearch(){
+        var searchedObjects = $('input[name="ids"]:checked').size();
+        if (searchedObjects >0){
+            return true;
+        }else{
+            alert("Please select at least one query example (use the check boxes below the product's photo)") ;
+            return false;
+        }      
+      }    
+      
+      function toggleDetails(dt, wdtMax, wdtMin, cssMax){
+          var width =  $(dt).parent().find( "img.obj, img.objOutfit, img.lineupMember").css( "width");
+          
+          if (width == wdtMax){
+              var newHeight = Math.round(parseInt(wdtMin) * 96/75) + "px";
+              $(dt).parent().css( "width", "" );
+              $(dt).parent().find( "img.obj, img.objOutfit, img.lineupMember" ).css( "width", wdtMin );
+              $(dt).parent().find( "img.obj, img.objOutfit, img.lineupMember" ).css( "height", newHeight );
+              $(dt).parent().find( ".showDetailsButton, .showDetailsButtonOutfit" ).val( "Details" );
+              
+          }else{
+              var newHeight = Math.round(parseInt(wdtMax) * 96/75) + "px";
+              $(dt).parent().css( "width", cssMax );
+              $(dt).parent().find( "img.obj, img.objOutfit, img.lineupMember" ).css( "width", wdtMax );
+              $(dt).parent().find( "img.obj, img.objOutfit, img.lineupMember" ).css( "height", newHeight );
+              $(dt).parent().find( ".showDetailsButton, .showDetailsButtonOutfit" ).val( "<< Hide" );
+          }
+          $(dt).parent().find( "div.info" ).toggleClass( "hide" );
+                
+      }      
+                
+    $(document).ready(function () {
+        showSuspect();
+
+        $("#submit_lineup").click(function(event){
+            $("#actionType_hidden").val("Update / Create lineup");
+        });
+
+
+        $(".suspectLink").click(function(){
+            var idSuspect = this.id
+            idSuspect = idSuspect.split("_")[1]
+
+            $("#featureSelector")[0].selectedIndex = 0
+            $("#lID").val("");
+            $("#lAuthor").val("");
+            $("#lSuspect").val(idSuspect);
+            $("#lNote").val("");
+            showSuspect();
+        });
+
+        $("#lSuspect").change(function(event){
+            showSuspect();
+        });
+        
+        $(".catsBox").change(function(event){
+            $(this.parentNode).toggleClass("checked")
+        });
+
+        $("#objForm").submit(function(event){
+            event.preventDefault(); //this will prevent the default submit
+
+            var cbs = $(".catsBox:checked");
+            var navQuery = "";
+            var nq = [];
+            var classes = [];
+            $(cbs).each(function() {
+                $($(this).attr('class').split(' ')).each(function() {
+                    if (this != '' && this != 'catsBox') {
+                        classes.push(this);
+                    }
+                });
+            });
+            classes = unique(classes)
+            for (var index = 0; index < classes.length; ++index) {
+                var clsChb = cbs.filter("."+classes[index]).map(function(){return $(this).attr("name");}).get();
+                nq.push(clsChb.join("|"));
+            }
+            navQuery = nq.join(",");
+            $("#navSubmit").val(navQuery);
+
+            $(this).unbind('submit').submit(); // continue the submit unbind preventDefault
+        });
+
+      $(".menuAccordion").accordion({
+        autoHeight: false,
+        collapsible: true
+      });
+
+
+      
+
+
+      
+      $(".runSearch").on("click", function(){
+           $("#actionType_hidden").val("Run Search");
+           return checkSearch();
+      });
+
+
+
+      function changeDetailLevel(val){
+            val = parseFloat(val);
+            var local = $("#localLabel");
+            var global = $("#globalLabel");
+            var staticSize = 10;
+            var dynamicSize = 14;
+
+            var localSize = Math.round(staticSize + (1-val) * dynamicSize);
+            var globalSize = Math.round(staticSize + val * dynamicSize);
+
+            local.css("font-size", localSize+"px");
+            global.css("font-size", globalSize+"px");
+
+            if(val <= 0.01){
+                local.css("font-weight", "bold");
+                local.css("text-decoration", "none");
+                global.css("text-decoration", "line-through");
+                global.css("font-weight", "normal");
+            }else if(val >= 0.99){
+                local.css("text-decoration", "line-through");
+                local.css("font-weight", "normal");
+                global.css("text-decoration", "none");
+                global.css("font-weight", "bold");
+            }else{
+                local.css("text-decoration", "none");
+                local.css("font-weight", "normal");
+                global.css("text-decoration", "none");
+                global.css("font-weight", "normal");
+            }
+
+
+
+         /*   var sizeBox = $("#detailLevelInner");
+            var width = 10 +   (val* 30 / ($('#globalLocalWeights option').size()-1));
+            var fs = 0.9* width;
+            sizeBox.css({
+                  'width': width+'px',
+                  'height': width+'px',
+                  'font-size': fs+'px',
+                  'line-height': fs+'px'
+
+            })     */
+
+      }
+
+      $( function() {
+        var select = $( "#globalLocalWeights" );
+        var slider = $( "#slider" ).slider({
+          min: 0,
+          max: $('#globalLocalWeights option').size()-1 ,
+          range: "min",
+          value: select[ 0 ].selectedIndex ,
+          slide: function( event, ui ) {
+            select[ 0 ].selectedIndex = ui.value;
+            changeDetailLevel(select.val());
+          } /*,
+          stop: function( event, ui ){
+            $("form.#objForm").append('<input type="hidden" name="actionType" value="Run Search" /> ');
+            if(checkSearch()){
+                $("form.#objForm").submit();
+            }
+          } */
+        });
+        $( "#globalLocalWeights" ).on( "change", function() {
+          slider.slider( "value", this.selectedIndex  );
+          //changeDetailLevel(this.selectedIndex );
+        });
+      } );
+
+
+      if ($("#globalLocalWeights")[0].selectedIndex == undefined){
+          //changeDetailLevel(0 );
+          $( "#slider" ).slider( "value", 1  );
+          $("#globalLocalWeights")[0].selectedIndex = 1;
+          changeDetailLevel($("#globalLocalWeights").val())
+      } else{
+          $( "#slider" ).slider( "value", $("#globalLocalWeights")[0].selectedIndex  );
+          changeDetailLevel($("#globalLocalWeights").val())
+      }
+      /*
+      function changeWPR(val){
+            val = parseFloat(val);
+            var label = $("#counterWhitePatchRemoval");
+            if( val == -1){
+                label.html("Keep all patches");
+            }else if( val == 100){
+                label.html("Remove background-only patches");
+            }else{
+                label.html("Remove patches with >"+val+"% of background");
+            }
+      }
+      
+
+      $( function() {
+        var selectWPR = $( "#whitePatchRemoval" );
+        var sliderWPR = $( "#sliderWhitePatchRemoval" ).slider({
+          min: 0,
+          max: $('#whitePatchRemoval option').size()-1 ,
+          range: "min",
+          value: selectWPR[ 0 ].selectedIndex ,
+          slide: function( event, ui ) {
+            selectWPR[ 0 ].selectedIndex = ui.value;
+            changeWPR(selectWPR.val());
+          }
+        });
+        $( "#whitePatchRemoval" ).on( "change", function() {
+          sliderWPR.slider( "value", this.selectedIndex  );
+        });
+      } );
+
+
+      if ($("#whitePatchRemoval")[0].selectedIndex == undefined){
+          //changeDetailLevel(0 );
+          $( "#sliderWhitePatchRemoval" ).slider( "value", 20  );
+          $("#whitePatchRemoval")[0].selectedIndex = 0;
+          changeWPR($("#whitePatchRemoval").val())
+      } else{
+          $( "#sliderWhitePatchRemoval" ).slider( "value", $("#whitePatchRemoval")[0].selectedIndex  );
+          changeWPR($("#whitePatchRemoval").val())
+      }
+       */
+      function vaClick(){    
+        var isOutOther = $("#contentwrap").hasClass('isOutOutfit')
+        $(".addButton").toggleClass('nodisplay')
+        $(".addToOutfitButtonMain").addClass('nodisplay')    
+        if(isOutOther){
+          $("#outfitPanel").css({"display":'none'});
+          $("#vaPanel").css({"display":'block'});
+          $("#contentwrap").toggleClass('isOutVA')
+          $("#contentwrap").toggleClass('isOutOutfit')
+          $("#vaTab").toggleClass('act')
+          $("#outfitTab").toggleClass('act')          
+        }else{
+          $("#contentwrap").toggleClass('isOutVA')
+          var isOut = $("#contentwrap").hasClass('isOutVA')
+           
+          $("#contentwrap").animate({marginRight: isOut ? '585px' : '50px'}, 400)  
+          $("#vaTab").animate({right: isOut ? '575px' : '7px'}, 400) 
+          $("#outfitTab").animate({right: isOut ? '575px' : '7px'}, 400)         
+          $("#vaPanel").animate({width:'toggle'},400);  
+          $("#vaTab").toggleClass('act')      
+        }
+      }
+
+      
+      $("#vaTab").click(function(){
+        vaClick();
+      });
+
+      vaClick();
+
+
+      addListenersOnRecommended();
+      
+      
+      
+      
+      currFeatures.forEach(addObjectToFeature)
+      loadRecommendation(0.0, 0.0);            
+      
+      $(".addButton").click(function() {          
+          item = this.id;
+          item = item.replace("va_", "");
+          addObjectToFeature(item, 0);
+          loadRecommendation(0.0, 0.0);
+          
+      });
+      
+      
+      
+
+      function removeObjectFromOutfit(obj){
+          $(obj).parent().remove();
+          var objID = obj.id.replace("remOutfit","itemInOutfit");
+          $("#"+objID).css("background-color","rgba(0,0,0,0)");                                 
+      }      
+    
+
+
+      $("img.obj").on("click", function(){
+         toggleDetails(this, "225px","155px","250px");
+      });    
+      
+      $(".showDetailsButton").on("click", function(){
+         toggleDetails(this, "225px","155px","250px");
+      });    
+      
+       
+            
+      
+      $(".showDetailsButtonOutfit").on("click", function(){
+         toggleDetails(this, "125px","75px","150px");
+      });   
+ 
+      /*$(".removeObjButton").on("click", function(){
+           removeObjectFromFeatures(this)
+      });      */
+
+      $(".navLink").click(function(){
+          item = this.id;
+          $("#navSubmit").val(item);
+          $("form#objForm").submit();
+
+          return false;
+      });
+
+
+      
+      $("#featureSelector").change(function() {          
+          val = $("#featureSelector").val();
+          if(val=="-1"){
+            //clear feature, clear selected objects
+            $("#lID").val("");
+            $("#lAuthor").val("");
+            $("#lSuspect").val("");
+            $("#lNote").val("");
+            $(".selectedFeatureMembers").remove();
+            $(".itemCell").css("background-color","white");
+          }else{
+            $("#lID").val(val);
+            $("#lAuthor").val(listOfFeatures[val][0]);
+            $("#lSuspect").val(listOfFeatures[val][1]);
+            $("#lNote").val(listOfFeatures[val][2]);
+            $(".selectedFeatureMembers").remove(); 
+            currFeatures = listOfFeatures[val][3].split(","); 
+            $(".itemCell").css("background-color","white");  
+            currFeatures.forEach(addObjectToFeature);
+            loadRecommendation(0.0, 0.0);  
+            showSuspect();
+          }
+      });
+      
+    });
+
+    var selectedObjects = [];
+
+            function drawIt(canvas, context, oid = 0) {
+                var imageObj = new Image();
+                imageObj.src = canvas.data('image');
+                imageObj.onload = function() {
+                    context.drawImage(imageObj,0,0, imgWidth,imgHeight);
+                    if(oid != 0){
+                        drawPastRectangles(canvas, context, oid);
+                        javascriptForQueryObject(oid);
+                    }
+                }
+            }
+
+            function drawRectangle(canvas, ctx, alpha, color, line, bx, by, sx, sy){
+                ctx.beginPath();
+                ctx.globalAlpha = alpha;
+                ctx.strokeStyle = color;
+                ctx.imageSmoothingEnabled = false;
+                ctx.lineWidth = line;
+                ctx.rect(bx, by, sx, sy);
+                ctx.stroke();
+            }
+
+            function drawPastRectangles(canvas, context, oid){
+                var recPos = document.getElementById("recPos").value;
+                var rpArr = recPos.split(";")
+                rpArr.forEach(function(element) {
+                    if (element.indexOf(":") != -1){
+                        var elemArr = element.split(":")
+                        if(elemArr[0] == oid){
+                            var canvas = document.getElementById('canvas_'+elemArr[0]);
+                            var ctx = canvas.getContext('2d');
+                            color = 'rgba(0, 0, 255, 1.0)';
+                            line = 1.2;
+                            alpha = 1.0;
+
+                            boxX = elemArr[1] %  boxNoX;
+                            boxY = Math.floor(elemArr[1] /  boxNoX);
+
+                            boxPosX = Math.round(boxX * stepSizeX)
+                            boxPosY = Math.round(boxY * stepSizeY)
+
+                            drawRectangle(canvas, ctx, alpha, color, line, boxPosX, boxPosY, stepSizeX, stepSizeY);
+                        }
+                    }
+                });
+            }
+
+
+            function addObjectToQuery(oid){
+                htmlParams = ' <div class="hide info"> <p><b>Title:  </b></p>  <p>Brand: "</p><p>Price:  CZK </p></div> ';
+                imgHTML = "<canvas id='canvas_" + oid + "' class='canvas' width='140' height='175' data-image='http://herkules.ms.mff.cuni.cz/lineit_v2/static/foto/" + oid + ".jpg'></canvas>";
+                html = "<div class='itemCell' id='itemDynSelected_" + oid + "'>"+ imgHTML + htmlParams + " <br/><input type='checkbox' name='ids' value='" + oid + "' checked='checked' title='Keep object in query'/> ";
+
+                $( "#output" ).before( html );
+
+               // selectedObjects.push(o);
+
+            }
+
+            function javascriptForQueryObject(o){
+                //$(document).ready(function () {     TODO: probably remove this doc. ready
+                    //Canvas
+                    var canvas = document.getElementById('canvas_' + o + '');
+                    var ctx = canvas.getContext('2d');
+                    //Variables
+                    var canvasx = $(canvas).offset().left;
+                    var canvasy = $(canvas).offset().top;
+                    var mousedown = false;
+                    //Mousedown
+                    $(canvas).on('mousedown', function(e) {
+                        var canvasx = $(canvas).offset().left;
+                        var canvasy = $(canvas).offset().top;
+
+                        var xOffset=Math.max(document.documentElement.scrollLeft,document.body.scrollLeft);
+                        var yOffset=Math.max(document.documentElement.scrollTop,document.body.scrollTop);
+
+                        var mousex = parseInt(e.clientX-canvasx + xOffset);
+                        var mousey = parseInt(e.clientY-canvasy + yOffset);
+
+                        var boxX = Math.floor(mousex / stepSizeX);
+                        var boxY = Math.floor(mousey / stepSizeY);
+
+                        var box = boxX + (boxNoX * boxY)
+                        if(box < 0){
+                            //error by wrong calculation of the offset - add box 0 to be able to recover from error
+                            box = 0;
+                        }
+
+                        // check whether the box was already selected. If so, deselect and remove color frame
+                        rpVal = document.getElementById("recPos").value;
+
+                        if(rpVal.indexOf(""+o+":" + box.toString() + ";") != -1){
+                            //already selected, deselect
+                            rpVal = rpVal.replace(""+o+":" + box.toString() + ";", "");
+                            color = 'rgba(255, 255, 255, 1.0)';
+                            line = 2;
+                        }else{
+                            //newly selected patch
+                            rpVal =  rpVal + ""+o+":" + box.toString() + ";";
+                            color = 'rgba(255, 0, 0, 1.0)';
+                            line = 1.5;
+                        }
+
+                        document.getElementById("recPos").value = rpVal;
+
+                        boxPosX = Math.round(boxX * stepSizeX);
+                        boxPosY = Math.round(boxY * stepSizeY);
+                        alpha = 1.0;
+
+                        drawRectangle(canvas, ctx, alpha, color, line, boxPosX, boxPosY, stepSizeX, stepSizeY);
+
+
+                        $('#output').html('current: '+mousex+', '+mousey+'<br/>box: '+boxX+', '+boxY+' => '+box);
+
+                   });
+
+                // });
+
+            }
+
+
+              function toggleObjectRelResults(oid){
+                var itemCell = $("#item_"+oid);
+                itemCell.toggleClass( "relResult" );
+                //TODO: add to the list of relevant results
+              }
+
+            $(document).ready(function(){
+                
+            
+                selectedObjects.forEach(function(o) {
+                //TODO: generate HTML
+                    //addObjectToQuery(oid);
+                    var canvas = $("#canvas_"+o);
+                    var context = canvas[0].getContext('2d');
+                    drawIt( canvas, context, o);
+                });                                
+                
+
+                queryButtons = $(".AddToQueryButton");
+                queryButtons.on('mousedown', function(){
+                    item = this.id;
+                    oid = item.replace("addID_", "");
+                    oid = oid.replace("addSelectedToQuery_", "");
+                    addObjectToQuery(oid);
+                    var canvas = $("#canvas_"+oid);
+                    var context = canvas[0].getContext('2d');
+                    drawIt( canvas, context, oid);
+                });                                                
+                
+
+                var featureID = $("#featureSelector").val();
+                if(featureID > -1){
+                    try{
+                        var oids = relevantQueryResults[featureID]
+                        oids.forEach(function(oid) {
+                            toggleObjectRelResults(oid);
+                        });
+                    }catch(err){
+
+                    }
+                }
+                
+
+                relevantResultButtons = $(".RelevantResultButton");
+                relevantResultButtons.on('mousedown', function() {
+                    item = this.id;
+                    oid = item.replace("relevantResult_", "");
+                    toggleObjectRelResults(oid);
+                });
+                
+
+                $("#submitSaveQuery").on('mousedown', function() {
+                    var featureID = $("#featureSelector").val();
+                    var glWeight = $("#globalLocalWeights").val();
+                    var whiteRemoval = $("#whitePatchRemoval").val();
+                    var aggMethod = $("#local_aggregation").val();
+
+                    var queryList = [];
+                    var responseList = [];
+                    var responseRelevance = [];
+
+                    $(".itemCell").each(function() {
+                        if((this.id.indexOf("itemSelected_")!= -1) || (this.id.indexOf("itemDynSelected_")!= -1)){
+                            var ids = this.id.replace("itemSelected_","");
+                            ids = ids.replace("itemDynSelected_","")
+                            queryList.push(ids);
+                        }
+
+                        if(this.id.indexOf("item_")!= -1){
+                            var ids = this.id.replace("item_","");
+                            responseList.push(ids);
+                            if(this.className.indexOf("relResult") != -1){
+                                responseRelevance.push(1)
+                            }else{
+                                responseRelevance.push(0)
+                            }
+                        }
+                    });
+
+                    var storeTxt = "'"+featureID+"';'"+glWeight+"';'"+whiteRemoval+"';'"+aggMethod+"';'"+queryList.join()+"';'"+responseList.join()+"';'"+responseRelevance.join()+"'";
+                    $("#querySummary").val(storeTxt);
+                });
+
+            });
+
+
+    </script>
+
+</head>
+ 
+<body>
+    <form action='index.py' method='post' id="objForm">       <!--https://www.zensolutions.co.nz/dev/httpdump-->
+    <div id="wrapper">
+        <div id="headerwrap">
+        <div id="header">
+          
+    <a href="http://herkules.ms.mff.cuni.cz/lineit_v2/index.py">Homepage</a> |
+    <a href="http://herkules.ms.mff.cuni.cz/lineit_v2/help.html">Help</a> |
+    <a href="http://siret.ms.mff.cuni.cz/">SIRET research group</a> | 
+    <a href="http://www.cuni.cz/UKEN-1.html">Charles University</a>  
+    
+    <h1>LineIT: <b>Line</b>ups assembl<b>I</b>ng <b>T</b>ool</h1>
+            </div>
+        </div>
+        
+        <div id="contentliquid">
+        <div id="vaPanel">
+          
+             <h3>Create or Edit Lineups for Particular Suspect</h3>
+                 Select Lineup: <select name='featureSelector' id='featureSelector'>
+                    <option value="-1">Create New Lineup</option>
+                        {{features}}
+                 </select>    <br/>
+                 <input type='hidden' value='{{lineupID}}' id="lID" name="lineupID" />
+
+                 <input type='hidden' value='' id="navSubmit" name="navSubmit" />
+                 <input type='hidden' value='' id="actionType_hidden" name="actionType" />
+
+                 <input type='text' value='{{lineupAuthor}}' id="lAuthor" name="lineupAuthor" placeholder="Author:" /> <br/>
+                 <input type='text' value='{{lineupSuspect}}' id="lSuspect" name="lineupSuspect" placeholder="Suspect's ID:" />  <br/>
+                 <input type='text' value='{{lineupNote}}' id="lNote" name="lineupNote" placeholder="Notes:" /> <br/>
+                 <input type='submit' id="submit_lineup" name='actionType' value='Update / Create lineup' />
+                 
+                 <h3>Current Suspect</h3>
+                <div id="currSuspect">
+                  {{currentSuspect}}
+                </div> 
+                 
+                 <h3>Lineup Members</h3>
+                <div id="currFM">
+                  {{currentFeatureMembers}}
+                </div> 
+                <div style="clear:left;">&nbsp;</div> 
+                
+              <h3>Recommended Candidates</h3>  
+              
+                <div id="recommended">
+                  {{recommendedCandidates}}
+                </div> 
+                <div style="clear:left;">&nbsp;</div> 
+        </div>                        
+        <div id="vaTab">Create/Edit Lineups</div>
+
+
+                      
+        <div id="contentwrap">
+      
+         <div class="content">       
+             <h3>LineIT tool</h3>
+             LineIT is an experimental tool for police photo lineups assembling. Please note that dataset photographies were anonymized to preserve privacy of users. More information about the tool and (semi)automated lineup assembling may be found in:
+             <br/>
+             <ul>
+                <li>Ladislav Peska, Hana Trojanova: Towards Recommender Systems for Police Photo Lineup. DLRS@RecSys 2017
+                <li>Ladislav Peska, Hana Trojanova: Personalized Recommendations in Police Photo Lineup Assembling Task. ITAT 2018
+                <li>Ladislav Peska, Hana Trojanova: Towards Similarity Models in Police Photo Lineup Assembling Tasks. SISAP 2018
+             </ul>
+             <h3>Visual similarity search</h3>
+                  Run multi-example, multi-patch query for all checked persons with following parameters:
+                  <table class="search">
+                    <tr>
+                        <td><span id="localLabel">Local</span> vs. <span id="globalLabel">Global</span> ratio
+
+                         <td rowspan="2">
+                            <select name='descriptor' id="descriptors" style="visibility: hidden; width:1px;height:1px; overflow:hidden;">
+                                {{descriptors}}
+                            </select>
+
+                            <select name='globalLocalWeights' id="globalLocalWeights" style="visibility: hidden; width:1px;height:1px; overflow:hidden;">
+                                {{globalLocalWeight}}
+                            </select>
+
+                            <!--
+                            <select name='whitePatchRemoval' id="whitePatchRemoval" style="visibility: hidden; width:1px;height:1px; overflow:hidden;">
+                                {{whitePatchRemoval}}
+                            </select>
+                            -->
+
+                          <!--Feature weighting:-->
+                            <select name='weighting' style="display:none;">
+                                {{weighting}}
+                            </select>
+
+
+                            <input type='hidden' name='aggregation' value='sum_and_crop' />
+                            <input type='hidden' name='querySummary' id="querySummary" value='' />
+                            <!--<select name='aggregation' >
+                                {{aggregation}}
+                            </select>-->
+                         <td>Local query aggregation:</td>
+                         <!--<td width="200"><span id="counterWhitePatchRemoval"></span></td>-->
+                    <td rowspan="2">
+                      <input type='submit' class="runSearch" name='actionType' value='Run Search' />
+                  <tr>
+                      <td><div id='slider'></div>
+                      <td>
+                            <select name='local_aggregation' id="local_aggregation">
+                                {{local_aggregation}}
+                            </select>
+                      <td><div id='sliderWhitePatchRemoval'></div>
+               </table>
+
+             {% if selected is defined %}
+                  <h4>Queried objects</h4>
+                      {{ selected }}
+                      {{ featureSegments }}
+                  <div style="clear:left;">&nbsp;</div> 
+             {% endif %}     
+             {% if navHeader is defined%}
+                  <h4>Attribute-based filters</h4> 
+                  <strong>{{navHeader}}</strong>
+             {% endif %}        
+             {% if selected is defined%}                                        
+                  <h4>Search results</h4>              
+             {% else %}
+                  <h4>Random candidates</h4>
+             {% endif %}
+            
+             {{objects}}
+            <div style="clear:left;"><input type='submit' name='actionType' value='Save Query' id="submitSaveQuery" />&nbsp;</div>
+
+        </div>
+        </div>
+        </div>
+        <div id="leftcolumnwrap">
+        <div id="leftcolumn">
+          {{suspects}}
+
+          <h3>Filter Candidates</h3>
+          {{objectCategories}}
+          
+          <!--
+          {% if exampleQueries is defined %}
+              <h3>Query Examples</h3>
+              <div style="position:relative">
+              <select name="exampleID">
+                  {{ exampleQueries }}
+              </select>
+              <input type='submit' name='actionType' value='Load example' />
+              </div> 
+          {% endif %}
+          -->
+        </div>
+        </div>
+        <!--<div id="rightcolumnwrap">
+        <div id="rightcolumn">
+             
+
+        </div>
+        </div>-->
+        <div id="footerwrap">
+        <div id="footer">
+            <p>                
+            The work on this tool was supported by the Czech Grant Agency, Grant no. GACR-17-22224S and Charles University Grant no. 232217.<br/>
+            Contact: Ladislav Peska, Charles University, Prague, Czech Republic, peska@ksi.mff.cuni.cz    
+            </p>
+        </div>
+        </div>
+    </div>                   
+    </form>
+    
+  <div id="popupCheckout" class="overlay">
+	<div class="popup">
+    <a class="close" href="#">&times;</a>
+		<h2>Thank you for trying LineIT</h2>
+		<div class="popupContent">
+			We will be happy to receive any comments or feedback. Please contact us on peska@ksi.mff.cuni.cz.
+		</div>
+	</div>
+  </div>
+    
+</body>
+</html>
+    
