@@ -1,0 +1,213 @@
+    /**
+    * Eric Meyer's Reset CSS v2.0 (http://meyerweb.com/eric/tools/css/reset/)
+    * http://www.cssportal.com
+    */
+  
+    /* HTML5 display-role reset for older browsers */
+    article, aside, details, figcaption, figure,
+    footer, header, hgroup, menu, nav, section {
+    display: block;
+    }
+    body {
+    line-height: 1;
+    }
+    ol, ul {
+    padding-left: 0px;
+    margin-left: 0px;
+    margin-bottom: 5px;
+    list-style: none;
+    }
+    li {
+    padding-left: 0px;
+    margin-left: 0px;
+    }
+
+    .ui-accordion .ui-accordion-content{
+      padding: 5px !important;
+    }
+    
+    .ui-accordion .ui-accordion-header {
+        padding-left: 30px !important;
+    }
+    table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    }
+    
+    .itemCell p{
+      padding:0px; 
+      margin: 3px;     
+    }
+    .hide{
+      display:none;      
+    }   
+    
+    #vaPanel { 
+        border-radius: 10px;
+        border: 1px solid #ff6633;
+        margin: 5px;
+        padding: 5px;
+        width: 550px; 
+        min-height: 600px;   
+        background: #ffffcc; 
+        display: none; 
+        float: right;
+        position: absolute; 
+        right:5px;
+        top:90px;
+    }
+    #vaTab { 
+        transform: rotate(270deg);
+        transform-origin: bottom right;
+        position: absolute;   
+        top: 110px;
+        background: #fde06d;
+        border-radius: 10px 10px 0 0;
+        border: 1px solid #ff6633;
+        right: 10px;
+         width: 200px;
+        text-align: center;
+        padding: 10px;
+        cursor:pointer;
+        font-style: italic;
+          transition: all 0.3s ease-out;
+     }
+     #vaTab.act, #vaTab:hover{
+        background: #ff6633;
+        color: white;
+        font-weight: bold;
+        font-style: normal;
+        
+    }  
+        
+    #outfitPanel { 
+        border-radius: 10px;
+        border: 1px solid #b81feb;
+        margin: 5px;
+        padding: 5px;
+        width: 550px; 
+        min-height: 600px;   
+        background: #ffffcc; 
+        display: none; 
+        float: right; 
+    }
+    #outfitTab { 
+        transform: rotate(270deg);
+        transform-origin: bottom right;
+        position: fixed;
+        top: 340px;
+        width: 200px;
+        background: #eac6f6;
+        border-radius: 10px 10px 0 0;
+        border: 1px solid #b81feb;
+        right: 10px;
+        text-align: center;
+        padding: 10px;
+        cursor:pointer;        
+        font-style: italic;
+          transition: all 0.3s ease-out;
+      }      
+    #outfitTab.act, #outfitTab:hover{
+        background: #b81feb;
+        color: white;
+        font-weight: bold;
+        font-style: normal;
+    }  
+    
+    img.obj, img.objOutfit, img.lineupMember{
+      cursor:pointer;
+    } 
+    .nodisplay{
+      display:none;
+    }
+    #slider{
+      width:10em;
+    }
+    
+    #detailLevelOuter{
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      border: 1px solid #ff6633;      
+    }
+    
+    #detailLevelInner{
+      font-weight:bold;
+      border-radius: 10px;
+      border: 1px solid #ff6633;
+      background-color:  #ff6633;
+      color:white;
+      text-align: center;      
+    }  
+    
+    .search td{
+        padding-left:10px;
+    }  
+    
+    
+    
+.button {
+  margin-top:10px;
+  font-size: 1em;
+  padding: 5px;
+  border: 1px solid #ff6633;
+  border-radius: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease-out;
+  color: black;
+  background: #fde06d;
+  margin-left:-10px;
+}
+.button:hover {
+  background: #ff6633;
+}
+    
+.overlay {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  transition: opacity 500ms;
+  visibility: hidden;
+  opacity: 0;
+}
+.overlay:target {
+  visibility: visible;
+  opacity: 1;
+}
+
+.popup {
+  margin: 70px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 5px;
+  width: 30%;
+  position: relative;
+  transition: all 5s ease-in-out;
+}
+
+.popup h2 {
+  margin-top: 0;
+  color: #333;
+  font-family: Tahoma, Arial, sans-serif;
+}
+.popup .close {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  transition: all 200ms;
+  font-size: 30px;
+  font-weight: bold;
+  text-decoration: none;
+  color: #333;
+}
+.popup .close:hover {
+  color: #ff6633;
+}
+.popup .popupContent {
+  max-height: 30%;
+  overflow: auto;
+}
